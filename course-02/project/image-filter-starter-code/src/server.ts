@@ -27,7 +27,26 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
   // RETURNS
   //   the filtered image file [!!TIP res.sendFile(filteredpath); might be useful]
 
-  /**************************************************************************** */
+  app.get( "/filteredimage", async (req, res) => {
+    const { image_url: image_url } = req.query;
+    if (!image_url) {
+      return res.status(400).send({ message: 'Image URL is required!' });
+    }
+
+    const pattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
+    '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.?)+[a-z]{2,}|'+ // domain name
+    '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
+    '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
+    '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
+    '(\\#[-a-z\\d_]*)?$','i'); // fragment locator
+    if (!pattern.test(image_url)) {
+      return res.status(422).send({ message: 'Invalid URL!' });
+    }
+
+    const filteredPath = await filterImageFromURL(image_url);
+
+    res.status(200).sendFile(filteredPath, {}, () => deleteLocalFiles([filteredPath]));
+  });
 
   //! END @TODO1
   
